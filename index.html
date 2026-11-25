@@ -56,6 +56,12 @@ ids.forEach(id=>$(id).addEventListener('input',()=>{if(['lang','level','unit','m
 // Conservative, local pattern checks. No external services or automatic corrections.
 const grammarRules={
  French:[
+ [/\b(?:mon|ton|son)\s+(?:mère|soeur|sœur|grand-mère|tante|cousine|fille|femme|famille|maison|chambre|voiture|table|chaise|copine)\b/giu,'Check the gender of the noun and the possessive adjective.'],
+ [/\b(?:ma|ta|sa)\s+(?:père|frère|grand-père|oncle|cousin|fils|mari|garçon|chien|chat|livre|bureau|copain|ami|amie|école|adresse)\b/giu,'Check the possessive adjective: consider noun gender and whether it begins with a vowel.'],
+ [/\b(?:mon|ma|ton|ta|son|sa)\s+(?:parents|frères|sœurs|soeurs|cousins|cousines|amis|amies|enfants|grands-parents)\b/giu,'Is the noun plural? Check the number of the possessive adjective.'],
+ [/\b(?:mes|tes|ses)\s+(?:père|mère|frère|sœur|soeur|oncle|tante|cousin|cousine|famille|maison|chambre)\b/giu,'Check whether the noun is singular or plural.'],
+ [/\b(?:le|un)\s+(?:mère|sœur|soeur|fille|femme|famille|maison|chambre|voiture)\b|\b(?:la|une)\s+(?:père|frère|garçon|bureau|chien)\b/giu,'Check the gender agreement between the article and noun.'],
+ [/\b(?:les|des)\s+(?:père|mère|frère|sœur|soeur|maison|chambre)\b/giu,'Check whether the noun needs a plural ending.'],
  [/\bje\s+(?:est|es|sont|sommes|êtes)\b/giu,'Check subject–verb agreement with être.'],
  [/\b(?:tu\s+(?:suis|est|sommes|êtes|sont)|(?:il|elle|on)\s+(?:suis|es|sommes|êtes|sont)|nous\s+(?:suis|es|est|êtes|sont)|vous\s+(?:suis|es|est|sommes|sont)|(?:ils|elles)\s+(?:suis|es|est|sommes|êtes))\b/giu,'Does the form of être agree with the subject?'],
  [/\b(?:j['’]\s*(?:as|a|avons|avez|ont)|tu\s+(?:ai|avons|avez|ont)|nous\s+(?:ai|as|a|avez|ont)|vous\s+(?:ai|as|a|avons|ont))\b/giu,'Revisit the present-tense forms of avoir.'],
@@ -88,19 +94,23 @@ const grammarRules={
  [/(?:먹다요|가다요|하다요|보다요|읽다요)(?=[\s,.!?]|$)/gu,'Review how a dictionary-form verb changes into a polite ending.'],
  [/(?:저는|나는)\s+(?:학생|선생님|한국인|미국인)이예요(?=[\s,.!?]|$)/gu,'Review the spelling of the polite copula after a consonant.']
  ]};
-function grammarFind(lang,value){const found=[];for(const [re,hint] of grammarRules[lang]||[]){const m=value.match(re);if(m)found.push({excerpt:m[0],hint});if(found.length===2)break;}return found;}
-let lastGrammarInput=Date.now(), composing=false, lastGrammarRun=0;
+function grammarFind(lang,value){const found=[],seen=new Set();for(const [re,hint] of grammarRules[lang]||[]){for(const m of value.matchAll(re)){const key=m[0].toLocaleLowerCase();if(seen.has(key))continue;seen.add(key);found.push({excerpt:m[0],hint});if(found.length===2)return found;}}return found;}
+let lastGrammarInput=Date.now(), composing=false, lastGrammarRun=0, grammarContext="", lastCheckedText=null;
 function updateGrammar(){
  const id=state.stage===0?'draft':state.stage===2?'revision':null;
  for(const k of ['draft','revision']){const panel=$(k+'Grammar');panel.hidden=k!==id||$('mode').value==='independent'||!state.started;}
  if(!id||!state.started||$('mode').value==='independent'||document.hidden||composing)return;
- if(Date.now()-lastGrammarInput<2200||Date.now()-lastGrammarRun<25000)return;
+ const context=id+'|'+$('lang').value;
+ if(context!==grammarContext){grammarContext=context;lastGrammarRun=0;lastCheckedText=null;}
+ const value=$(id).value;
+ if(value===lastCheckedText||Date.now()-lastGrammarInput<2200||Date.now()-lastGrammarRun<15000)return;
+ lastCheckedText=value;
  lastGrammarRun=Date.now();const panel=$(id+'Grammar'),list=panel.querySelector('.grammar-items');list.replaceChildren();
  const matches=grammarFind($('lang').value,$(id).value);
- if(!matches.length){list.textContent='No selected patterns flagged. This does not mean your writing is error-free.';return;}
+ if(!matches.length){list.textContent=value.trim()?'Checked: no selected patterns flagged. This does not mean your writing is error-free.':'Start writing to receive occasional grammar hints.';return;}
  for(const m of matches){const row=document.createElement('div'),mark=document.createElement('mark');mark.textContent=m.excerpt;row.append(mark,document.createTextNode(' — '+m.hint));list.append(row);}
 }
-for(const id of ['draft','revision']){const el=$(id);el.spellcheck=false;el.addEventListener('compositionstart',()=>composing=true);el.addEventListener('compositionend',()=>{composing=false;lastGrammarInput=Date.now();});el.addEventListener('input',()=>{lastGrammarInput=Date.now();const list=$(id+'Grammar').querySelector('.grammar-items');if(list.querySelector('mark'))list.textContent='Keep writing. Hints refresh after a short pause.';});}
+for(const id of ['draft','revision']){const el=$(id);el.spellcheck=false;el.addEventListener('compositionstart',()=>composing=true);el.addEventListener('compositionend',()=>{composing=false;lastGrammarInput=Date.now();});el.addEventListener('input',()=>{lastGrammarInput=Date.now();const list=$(id+'Grammar').querySelector('.grammar-items');list.textContent='Writing in progress — hints refresh after a short pause (at most once every 15 seconds).';});}
 setInterval(updateGrammar,1000);
 
 </script></body></html>
