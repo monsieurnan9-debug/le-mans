@@ -231,6 +231,32 @@ ko(/(?:책|학생|사람|집|물|밥)(?:는|가|를)(?=[\s,.!?。！？]|$)/gu,'
 ko(/(?:친구|학교|사과|커피|의사|가수)(?:은|이|을)(?=[\s,.!?。！？]|$)/gu,'Particle after vowel','Check whether the noun ends in a vowel and select the corresponding particle form.');
 
 
+// Korean-only expansion: known nominal stems, batchim, predicate patterns and speech levels.
+const koNouns38='저 나 너 우리 여러분 학생 선생님 친구 사람 가족 부모님 아버지 어머니 엄마 아빠 형 오빠 누나 언니 동생 남동생 여동생 이름 한국 중국 미국 일본 프랑스 한국인 미국인 중국인 일본인 의사 가수 회사원 직원 학교 교실 도서관 집 식당 카페 공원 병원 시장 가게 영화관 역 책 공책 연필 펜 물 밥 음식 사과 커피 우유 빵 고기 김치 한국어 중국어 영어 일본어 프랑스어 음악 영화 운동 축구 농구 시간 날씨 오늘 내일 주말 버스 지하철 자동차 사진 숙제 수업 방 책상 의자 컴퓨터 강아지 고양이'.split(' ').sort((a,b)=>b.length-a.length);
+const koBound38='(?<![가-힣])',koEnd38='(?=[\\s,.!?。！？;；…]|$)';
+for(const n of koNouns38){const b=(n.charCodeAt(n.length-1)-0xac00)%28;const wrong=b?'는|가|를':'은|이|을';ko(new RegExp(koBound38+n+'(?:'+wrong+')'+koEnd38,'gu'),'Particle and 받침','Check the final sound of the noun and choose the matching topic, subject or object particle.');ko(new RegExp(koBound38+n+'(?:'+(b?'예요|이예요':'이에요')+')'+koEnd38,'gu'),'Polite identity ending','Check the noun’s final sound before choosing the informal-polite copula.');ko(new RegExp(koBound38+n+'(?:'+(b&&b!==8?'로':'으로')+')'+koEnd38,'gu'),'Direction or means particle','Review the final consonant and the ㄹ exception for 로/으로.');}
+ko(/(?<![가-힣])(?:나가|저가|너가)(?=[\s,.!?]|$)/gu,'Subject pronoun','Review the special subject-particle forms of personal pronouns.');
+ko(/(?<![가-힣])(?:학생|선생님|친구|의사|한국인|미국인|회사원|가수)\s+(?:입니다|이에요|예요)(?=[\s,.!?]|$)/gu,'Copula spacing','The affirmative copula attaches directly to the preceding noun.');
+ko(/(?<![가-힣])(?:학생|선생님|친구|의사|한국인|미국인|회사원|가수)(?:습니다|ㅂ니다)(?=[\s,.!?]|$)/gu,'Formal polite identity','A noun predicate uses the copula, not the ordinary verb ending.');
+ko(/(?<![가-힣])(?:저는|나는|그는|그녀는|제\s*친구는)\s+(?:학생|선생님|의사|한국인|미국인|회사원|가수)(?=[.!?。！？]|$)/gu,'Identity predicate','In a complete identity statement, check whether the noun predicate has an appropriate ending.');
+ko(/(?<![가-힣])(?:학교|집|도서관|식당|공원|회사|병원|시장|교실)(?:에서|을|를)\s+(?:가요|갑니다|갔어요|갔습니다|와요|옵니다)(?=[\s,.!?]|$)/gu,'Movement destination','Check whether the place is the destination rather than the location of an activity.');
+ko(/(?<![가-힣])(?:학교|집|도서관|식당|공원|회사|교실)에\s+(?:공부해요|공부합니다|먹어요|먹습니다|일해요|일합니다|운동해요|운동합니다)(?=[\s,.!?]|$)/gu,'Location of action','Review the particle used for the place where an activity occurs.');
+ko(/(?<![가-힣])(?:책|밥|물|커피|빵|사과|음악|영화|숙제)(?:은|는|이|가)\s+(?:먹어요|먹습니다|마셔요|마십니다|읽어요|읽습니다|들어요|듣습니다|봐요|봅니다)(?=[\s,.!?]|$)/gu,'Possible object or topic','Check whether this noun is the object of the action or intentionally marked as a topic or subject.');
+ko(/(?<![가-힣])(?:가|오|보|하|먹|읽|마시|자|사|공부하|좋아하|있|없|살|듣|쓰|만들|걷|돕|춥|덥|예쁘|크|작)다(?:요|습니다|ㅂ니다|아요|어요)(?=[\s,.!?]|$)/gu,'Dictionary versus conjugated form','Remove the dictionary ending before applying a polite conjugation.');
+ko(/(?<![가-힣])(?:먹아요|읽아요|있아요|없아요|좋아하요|공부하요|하아요|하어요|가어요|오어요|보어요|자어요|사어요|마시아요|듣어요|걷어요|돕아요|춥어요|덥어요|쓰어요|크어요|예쁘어요|가습니다|오습니다|보습니다|하습니다|자습니다|마시습니다|먹ㅂ니다|읽ㅂ니다|있ㅂ니다|없ㅂ니다|살습니다|만들습니다)(?=[\s,.!?]|$)/gu,'Verb conjugation','Review vowel harmony, stem changes and irregular forms, or the final consonant rule for formal polite endings.');
+ko(/(?<![가-힣])(?:아니예요|아니에요요|아닙니다요|해요습니다|가요습니다|먹어요습니다|했어요요|갔어요요)(?=[\s,.!?]|$)/gu,'Polite ending spelling or stacking','Check the negative copula spelling or choose just one polite ending.');
+ko(/(?<![가-힣])(?:저는|나는|그는|그녀는)\s+(?:책을|밥을|물을|커피를|숙제를|영화를)\s*(?=[.!?。！？]|$)/gu,'Possible incomplete sentence','A complete sentence normally needs a predicate; check whether the intended action is missing.');
+
+// V39: Korean sentence structure and register; targeted, not a full parser.
+ko(/(?<![가-힣])(?:나|저|너)\s+(?=(?:아빠|엄마|아버지|어머니|부모님|형|오빠|누나|언니|동생|친구|가족)(?:은|는|이|가|을|를|의|\s|[.!?]|$))/gu,'Possessive relationship','Check the possessive form of the pronoun before the family member or other person.');
+ko(/(?<![가-힣])(?:입니다|이에요|예요|이었다|이었습니다|이었어요)\s+(?=[가-힣])/gu,'Misplaced copula','A Korean noun predicate normally comes at the end of its clause. Attach the affirmative copula to the noun it identifies, rather than placing it before that noun.');
+ko(/(?<![가-힣])(?:한국|중국|미국|일본|프랑스|영국|캐나다|베트남|독일|호주)\s+사람(?=\s*[.!?。！？]|\s*$)/gu,'Incomplete noun predicate','If this is a complete identity statement, check whether the nationality expression has a predicate ending.');
+ko(/(?<![가-힣])(?:저는|나는|(?:제|내|우리)\s*(?:아빠|엄마|아버지|어머니|친구|동생|형|언니|오빠|누나|부모님)(?:은|는|이|가))\s+(?:학생|선생님|사람|의사|회사원|친구|가수|한국인|미국인|중국인|일본인)(?=\s*[.!?。！？]|\s*$)/gu,'Incomplete identity statement','Check that the noun predicate has an appropriate sentence ending.');
+ko(/(?<![가-힣])(?:나|나는|내가|내\s+(?:아빠|엄마|친구|가족))(?=[^.!?。！？\n]{0,80}(?:입니다|습니다|[가-힣]니다)(?:\s*[.!?。！？]|\s*$))/gu,'Possible register mismatch','Consider whether the pronoun and formal-polite ending match the relationship and audience. This is a register suggestion, not necessarily a grammatical error.');
+ko(/(?<![가-힣])(?:입니다|이에요|예요)\s*(?=[.!?。！？]|$)/gu,'Detached copula','Check that the affirmative identity ending is attached to a preceding noun.');
+ko(/(?<![가-힣])(?:학생|선생님|사람|친구|의사|한국인|미국인|중국인|일본인)\s+(?:입니다|이에요|예요)(?=\s*[.!?。！？]|\s*$)/gu,'Copula spacing','The affirmative copula normally attaches directly to its noun.');
+ko(/(?<![가-힣])(?:저는|나는|제가|내가|친구는|친구가)\s+(?:먹어요|먹습니다|읽어요|읽습니다|봐요|봅니다|마셔요|마십니다|좋아해요|좋아합니다)\s+(?:밥|책|영화|물|커피|음악|사과)(?:을|를)?(?=\s*[.!?。！？]|\s*$)/gu,'Possible predicate placement','In an ordinary beginner sentence, the object generally precedes the verb. Check whether the predicate has been placed before its object.');
+
 // V15: targeted present-tense verb spelling and endings, never general spellcheck.
 const frRegular={
  er:'adorer écouter étudier regarder jouer travailler chercher trouver donner demander arriver rester entrer visiter préparer porter acheter',
